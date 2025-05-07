@@ -1,103 +1,142 @@
+"use client";
+import { Canvas } from "@react-three/fiber";
+import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import Image from "next/image";
+import { useControls } from "leva";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
 
-export default function Home() {
+// DoorModel component with dynamic material logic
+function DoorModel() {
+  const gltf = useGLTF("/door.glb");
+
+  const { textureUrl, variant, rotation } = useControls({
+    textureUrl: {
+      value: "/lami4.jpg",
+      options: ["/lami2.jpg", "/lami3.jpg", "/lami4.jpg"],
+    },
+    variant: {
+      value: "matte",
+      options: ["glossy", "matte", "satin", "custom"],
+    },
+    rotation: {
+      value: Math.PI / 2,
+      min: 0,
+      max: Math.PI * 2,
+      step: 0.01,
+    },
+  });
+
+  // Memoized texture loading
+  const texture = useMemo(() => new THREE.TextureLoader().load(textureUrl), [textureUrl]);
+
+  useEffect(() => {
+    gltf.scene.traverse((child) => {
+      if (child.isMesh && child.name === "Door") {
+        child.material.map = texture;
+        child.material.roughnessMap = texture;
+
+        // Presets for each wrap finish
+        const materialPresets = {
+          glossy: {
+            metalness: 0.6,
+            roughness: 0.3,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05,
+            envMapIntensity: 2.5,
+          },
+          matte: {
+            metalness: 0,
+            roughness: 2.0,
+            clearcoat: 0.0,
+            clearcoatRoughness: 0.0,
+            envMapIntensity: 0.3,
+          },
+          satin: {
+            metalness: 0.1,
+            roughness: 2,
+            clearcoat: 0.2,
+            clearcoatRoughness: 0.4,
+            envMapIntensity: 1.2,
+          },
+        };
+
+        // Apply the selected preset
+        const props = materialPresets[variant];
+        child.material.metalness = props.metalness;
+        child.material.roughness = props.roughness;
+        child.material.clearcoat = props.clearcoat;
+        child.material.clearcoatRoughness = props.clearcoatRoughness;
+        child.material.envMapIntensity = props.envMapIntensity;
+        child.material.needsUpdate = true;
+      }
+    });
+  }, [texture, variant]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <group position={[0, -10, 0]} rotation={[rotation, 0, 0]}>
+      <primitive object={gltf.scene} scale={1.5} />
+    </group>
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+// Light setup
+const Lights = () => {
+  const { lightPosition, lightIntensity } = useControls({
+    lightPosition: {
+      value: [5, 10, 7],
+      step: 0.1,
+    },
+    lightIntensity: {
+      value: 0,
+      min: 0,
+      max: 5,
+      step: 0.1,
+    },
+  });
+
+  return (
+    <>
+      <ambientLight intensity={0.7} />
+      <directionalLight position={lightPosition} intensity={lightIntensity} castShadow />
+    </>
+  );
+};
+
+// Main component
+export default function Home() {
+  const { environmentPreset } = useControls({
+    environmentPreset: {
+      value: "city",
+      options: ["sunset", "dawn", "night", "warehouse", "forest", "apartment", "studio", "city", "park", "lobby"],
+    },
+  });
+
+  return (
+    <div className="">
+      <main className="">
+        <div
+          style={{
+            width: "100vw",
+            height: "100vh",
+            background: "#222",
+            borderRadius: 16,
+            overflow: "hidden",
+          }}
+        >
+          <Canvas dpr={[5, 5]} camera={{ position: [-20, 2, 5], fov: 60 }} shadows>
+            <Environment preset={environmentPreset} background blur={0} />
+            <Lights />
+            <DoorModel />
+            <OrbitControls enablePan enableZoom enableRotate />
+          </Canvas>
         </div>
+
+        <Image src={"/lami4.jpg"} height={500} width={500} alt="image" className="absolute z-50 left-0 top-0" />
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
+
+// Preload model
+useGLTF.preload("/door.glb");
