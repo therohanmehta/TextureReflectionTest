@@ -10,7 +10,7 @@ import * as THREE from "three";
 
 // DoorModel component with dynamic material logic
 function DoorModel() {
-  const gltf = useGLTF("/door.glb");
+  const gltf = useGLTF("/Door.glb");
 
   const { textureUrl, rotation, roughness, metalness, color } = useControls({
     textureUrl: {
@@ -141,4 +141,4 @@ export default function Home() {
 }
 
 // Preload model
-useGLTF.preload("/door.glb");
+useGLTF.preload("/Door.glb");
