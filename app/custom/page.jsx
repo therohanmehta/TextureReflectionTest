@@ -2,23 +2,42 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF, Box } from "@react-three/drei";
 import Image from "next/image";
-import { useControls } from "leva";
-import { useEffect, useMemo } from "react";
+import { MeshStandardMaterial, MeshBasicMaterial, MeshPhongMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshToonMaterial } from "three";
+
+import { Leva, useControls } from "leva";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 
 // DoorModel component with dynamic material logic
-function DoorModel() {
+function DoorModel({ roughnessMetalness, hdrIntensity }) {
   const gltf = useGLTF("/Door.glb");
 
-  const { textureUrl, rotation, metalness, roughness, clearcoat, clearcoatRoughness, envMapIntensity } = useControls({
+  const { textureUrl, rotation, roughness, metalness, color, position, textureRepeat } = useControls({
     textureUrl: {
       value: "/lami4.jpg",
-      options: ["/lami2.jpg", "/lami3.jpg", "/lami4.jpg"],
+      options: ["/lami2.jpg", "/lami3.jpg", "/lami4.jpg", "/lami5.jpg", "/lami6.jpg"],
+    },
+    textureRepeat: {
+      value: [1, 1],
+      min: [0.1, 0.1],
+      max: [10, 10],
+      step: 0.1,
     },
     rotation: {
-      value: Math.PI / 2,
+      value: [0, 0],
+      min: [0, 0],
+      max: [Math.PI * 2, Math.PI * 2],
+      step: 0.01,
+    },
+    position: {
+      value: [0, -10, 0],
+      min: [-10, -10, -10],
+      max: [10, 10, 10],
+    },
+    roughness: {
+      value: 0.9,
       min: 0,
-      max: Math.PI * 2,
+      max: 1,
       step: 0.01,
     },
     metalness: {
@@ -27,91 +46,39 @@ function DoorModel() {
       max: 1,
       step: 0.01,
     },
-    roughness: {
-      value: 0.5,
-      min: 0,
-      max: 2,
-      step: 0.01,
-    },
-    clearcoat: {
-      value: 0.5,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    clearcoatRoughness: {
-      value: 0.2,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    envMapIntensity: {
-      value: 1,
-      min: 0,
-      max: 5,
-      step: 0.1,
+    color: {
+      value: "#ffffff",
     },
   });
 
-  // Memoized texture loading
-  const texture = useMemo(() => new THREE.TextureLoader().load(textureUrl), [textureUrl]);
+  // Memoized texture loading with repeat settings
+  const texture = useMemo(() => {
+    const tex = new THREE.TextureLoader().load(textureUrl);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(textureRepeat[0], textureRepeat[1]);
+    return tex;
+  }, [textureUrl, textureRepeat]);
 
   useEffect(() => {
     gltf.scene.traverse((child) => {
       if (child.isMesh && child.name === "Door") {
-        child.material.map = texture;
-        child.material.roughnessMap = texture;
-        child.material.metalness = metalness;
-        child.material.roughness = roughness;
-        child.material.clearcoat = clearcoat;
-        child.material.clearcoatRoughness = clearcoatRoughness;
-        child.material.envMapIntensity = envMapIntensity;
-        child.material.needsUpdate = true;
+        const standardMaterial = new THREE.MeshStandardMaterial();
+        standardMaterial.map = texture;
+        standardMaterial.color = new THREE.Color(color);
+        standardMaterial.roughness = roughness;
+        standardMaterial.metalness = metalness;
+        child.material = standardMaterial;
       }
     });
-  }, [texture, metalness, roughness, clearcoat, clearcoatRoughness, envMapIntensity]);
+  }, [texture, roughness, metalness, color, roughnessMetalness, hdrIntensity]);
 
   return (
-    <group position={[0, -10, 0]} rotation={[rotation, 0, 0]}>
+    <group position={position} rotation={[rotation[0], rotation[1], 0]}>
       <primitive object={gltf.scene} scale={1.5} />
     </group>
   );
 }
-const MaterialBoxes = () => {
-  return (
-    <>
-      {/* Standard Material Box */}
-      <Box position={[-6, 0, 0]}>
-        <meshStandardMaterial color="#000000" />
-      </Box>
 
-      {/* Basic Material Box */}
-      <Box position={[-3, 0, 0]}>
-        <meshBasicMaterial color="#000000" />
-      </Box>
-
-      {/* Phong Material Box */}
-      <Box position={[0, 0, 0]}>
-        <meshPhongMaterial color="#000000" shininess={100} />
-      </Box>
-
-      {/* Lambert Material Box */}
-      <Box position={[3, 0, 0]}>
-        <meshLambertMaterial color="#000000" />
-      </Box>
-
-      {/* Physical Material Box */}
-      <Box position={[6, 0, 0]}>
-        <meshPhysicalMaterial color="#000000" roughness={0.5} metalness={0.5} />
-      </Box>
-
-      {/* Toon Material Box */}
-      <Box position={[9, 0, 0]}>
-        <meshToonMaterial color="#000000" />
-      </Box>
-    </>
-  );
-};
 // Light setup
 const Lights = () => {
   const { lightPosition, lightIntensity } = useControls({
@@ -120,7 +87,7 @@ const Lights = () => {
       step: 0.1,
     },
     lightIntensity: {
-      value: 0,
+      value: 1,
       min: 0,
       max: 5,
       step: 0.1,
@@ -137,15 +104,104 @@ const Lights = () => {
 
 // Main component
 export default function Home() {
-  const { environmentPreset } = useControls({
-    environmentPreset: {
-      value: "city",
-      options: ["sunset", "dawn", "night", "warehouse", "forest", "apartment", "studio", "city", "park", "lobby"],
+  const [roughnessMetalness, setRoughnessMetalness] = useState({ r: 0, m: 0 });
+  const [textureUrl, setTextureUrl] = useState("/lami4.jpg");
+  const [selectedTexture, setSelectedTexture] = useState("stone"); // Track selected texture
+  const [selectedFinish, setSelectedFinish] = useState("glossy"); // Track selected finish
+
+  const { hdrPath, hdrRotation, hdrIntensity } = useControls({
+    hdrPath: {
+      value: "/hdr.hdr",
+      options: ["/hdr.hdr", "/hdr2.hdr", "/hdr3.hdr", "/hdr4.hdr"],
+    },
+    hdrRotation: {
+      value: 1.2,
+      min: 0,
+      max: Math.PI * 2,
+      step: 0.01,
+    },
+    hdrIntensity: {
+      value: 1,
+      min: 0,
+      max: 5,
+      step: 0.1,
     },
   });
 
+  const handleMaterialChange = (roughness, metalness, finish) => {
+    setRoughnessMetalness({ r: roughness, m: metalness });
+    setSelectedFinish(finish);
+  };
+
+  const handleTextureChange = (url, texture) => {
+    setTextureUrl(url);
+    setSelectedTexture(texture);
+  };
+
   return (
     <div className="">
+      {/* <div className="absolute bottom-0 left-1/2 -translate-1/2  flex gap-3 z-50 flex-col items-center justify-center">
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleTextureChange("/lami5.jpg", "woodgrain")}
+            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedTexture === "woodgrain" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Woodgrain Laminate
+          </button>
+          <button
+            onClick={() => handleTextureChange("/lami2.jpg", "grain")}
+            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedTexture === "grain" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Grain Texture
+          </button>
+          <button
+            onClick={() => handleTextureChange("/lami4.jpg", "stone")}
+            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedTexture === "stone" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Stone Laminate
+          </button>
+          <button
+            onClick={() => handleTextureChange("/lami6.jpg", "texmex")}
+            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedTexture === "texmex" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Tex Mex Laminate
+          </button>
+        </div>
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleMaterialChange(0.06, 0.5, "glossy")}
+            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedFinish === "glossy" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Glossy
+          </button>
+          <button
+            onClick={() => handleMaterialChange(0.35, 0.88, "matte")}
+            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedFinish === "matte" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Matte
+          </button>
+          <button
+            onClick={() => handleMaterialChange(0.18, 0.55, "satin")}
+            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+              selectedFinish === "satin" ? "bg-blue-600" : "bg-black"
+            }`}
+          >
+            Satin Metallic
+          </button>
+        </div>
+      </div> */}
       <main className="">
         <div
           style={{
@@ -156,16 +212,14 @@ export default function Home() {
             overflow: "hidden",
           }}
         >
-          <Canvas dpr={[5, 5]} camera={{ position: [-20, 2, 5], fov: 60 }} shadows>
-            <Environment preset={environmentPreset} background blur={0} />
+          <Canvas dpr={[2, 4]} camera={{ position: [-20, 2, 5], fov: 60 }} shadows>
+            <Environment files={hdrPath} background blur={0} rotation={[hdrRotation, hdrRotation, hdrRotation]} intensity={hdrIntensity} />
             <Lights />
-            <DoorModel />
-            <MaterialBoxes />
+            <DoorModel roughnessMetalness={roughnessMetalness} hdrIntensity={hdrIntensity} />
+            {/* <MaterialBoxes /> */}
             <OrbitControls enablePan enableZoom enableRotate />
           </Canvas>
         </div>
-
-        <Image src={"/lami4.jpg"} height={500} width={500} alt="image" className="absolute z-50 left-0 top-0" />
       </main>
     </div>
   );
