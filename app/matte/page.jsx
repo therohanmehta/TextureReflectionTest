@@ -144,7 +144,7 @@ export default function Home() {
         <div className="flex gap-4">
           <button
             onClick={() => handleTextureChange("/lami5.jpg", "woodgrain")}
-            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedTexture === "woodgrain" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -152,7 +152,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => handleTextureChange("/lami2.jpg", "grain")}
-            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedTexture === "grain" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -160,7 +160,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => handleTextureChange("/lami4.jpg", "stone")}
-            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedTexture === "stone" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -168,7 +168,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => handleTextureChange("/lami6.jpg", "texmex")}
-            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedTexture === "texmex" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -178,7 +178,7 @@ export default function Home() {
         <div className="flex gap-4">
           <button
             onClick={() => handleMaterialChange(0.06, 0.5, "glossy")}
-            className={`cursor-crosshair px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedFinish === "glossy" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -186,7 +186,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => handleMaterialChange(0.35, 0.88, "matte")}
-            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedFinish === "matte" ? "bg-blue-600" : "bg-black"
             }`}
           >
@@ -194,7 +194,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => handleMaterialChange(0.18, 0.55, "satin")}
-            className={`px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
+            className={`cursor-pointer px-4 py-2 rounded-md   transition-colors duration-200 font-medium text-white ${
               selectedFinish === "satin" ? "bg-blue-600" : "bg-black"
             }`}
           >
