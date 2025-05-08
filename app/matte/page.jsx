@@ -2,6 +2,8 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF, Box } from "@react-three/drei";
 import Image from "next/image";
+import { MeshStandardMaterial, MeshBasicMaterial, MeshPhongMaterial, MeshLambertMaterial, MeshPhysicalMaterial, MeshToonMaterial } from "three";
+
 import { useControls } from "leva";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
@@ -10,7 +12,7 @@ import * as THREE from "three";
 function DoorModel() {
   const gltf = useGLTF("/door.glb");
 
-  const { textureUrl, rotation, metalness, roughness, clearcoat, clearcoatRoughness, envMapIntensity } = useControls({
+  const { textureUrl, rotation, roughness, metalness, color } = useControls({
     textureUrl: {
       value: "/lami4.jpg",
       options: ["/lami2.jpg", "/lami3.jpg", "/lami4.jpg"],
@@ -21,35 +23,20 @@ function DoorModel() {
       max: Math.PI * 2,
       step: 0.01,
     },
+    roughness: {
+      value: 0.9,
+      min: 0,
+      max: 1,
+      step: 0.01,
+    },
     metalness: {
       value: 0.1,
       min: 0,
       max: 1,
       step: 0.01,
     },
-    roughness: {
-      value: 0.5,
-      min: 0,
-      max: 2,
-      step: 0.01,
-    },
-    clearcoat: {
-      value: 0.5,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    clearcoatRoughness: {
-      value: 0.2,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    envMapIntensity: {
-      value: 1,
-      min: 0,
-      max: 5,
-      step: 0.1,
+    color: {
+      value: "#ffffff",
     },
   });
 
@@ -59,17 +46,15 @@ function DoorModel() {
   useEffect(() => {
     gltf.scene.traverse((child) => {
       if (child.isMesh && child.name === "Door") {
-        child.material.map = texture;
-        child.material.roughnessMap = texture;
-        child.material.metalness = metalness;
-        child.material.roughness = roughness;
-        child.material.clearcoat = clearcoat;
-        child.material.clearcoatRoughness = clearcoatRoughness;
-        child.material.envMapIntensity = envMapIntensity;
-        child.material.needsUpdate = true;
+        const standardMaterial = new THREE.MeshStandardMaterial();
+        standardMaterial.map = texture;
+        standardMaterial.color = new THREE.Color(color);
+        standardMaterial.roughness = roughness;
+        standardMaterial.metalness = metalness;
+        child.material = standardMaterial;
       }
     });
-  }, [texture, metalness, roughness, clearcoat, clearcoatRoughness, envMapIntensity]);
+  }, [texture, roughness, metalness, color]);
 
   return (
     <group position={[0, -10, 0]} rotation={[rotation, 0, 0]}>
@@ -77,41 +62,27 @@ function DoorModel() {
     </group>
   );
 }
+
 const MaterialBoxes = () => {
+  const handleClick = (materialName) => {
+    // alert(`This is a ${materialName} material`);
+  };
+
   return (
     <>
-      {/* Standard Material Box */}
-      <Box position={[-6, 0, 0]}>
-        <meshStandardMaterial color="#000000" />
+      {/* Standard Material Box with matte finish */}
+      <Box position={[-20, 0, 0]} scale={[5, 5, 5]} onClick={() => handleClick("Standard")}>
+        <meshStandardMaterial color="#ffffff" roughness={0.9} metalness={0.1} />
       </Box>
 
-      {/* Basic Material Box */}
-      <Box position={[-3, 0, 0]}>
-        <meshBasicMaterial color="#000000" />
-      </Box>
-
-      {/* Phong Material Box */}
-      <Box position={[0, 0, 0]}>
-        <meshPhongMaterial color="#000000" shininess={100} />
-      </Box>
-
-      {/* Lambert Material Box */}
-      <Box position={[3, 0, 0]}>
-        <meshLambertMaterial color="#000000" />
-      </Box>
-
-      {/* Physical Material Box */}
-      <Box position={[6, 0, 0]}>
-        <meshPhysicalMaterial color="#000000" roughness={0.5} metalness={0.5} />
-      </Box>
-
-      {/* Toon Material Box */}
-      <Box position={[9, 0, 0]}>
-        <meshToonMaterial color="#000000" />
+      {/* Standard Material Box with different roughness */}
+      <Box position={[20, 0, 0]} scale={[5, 5, 5]} onClick={() => handleClick("Standard")}>
+        <meshStandardMaterial color="#ffffff" roughness={0.8} metalness={0.1} />
       </Box>
     </>
   );
 };
+
 // Light setup
 const Lights = () => {
   const { lightPosition, lightIntensity } = useControls({
@@ -120,7 +91,7 @@ const Lights = () => {
       step: 0.1,
     },
     lightIntensity: {
-      value: 0,
+      value: 1,
       min: 0,
       max: 5,
       step: 0.1,
@@ -156,7 +127,7 @@ export default function Home() {
             overflow: "hidden",
           }}
         >
-          <Canvas dpr={[5, 5]} camera={{ position: [-20, 2, 5], fov: 60 }} shadows>
+          <Canvas dpr={[2, 4]} camera={{ position: [-20, 2, 5], fov: 60 }} shadows>
             <Environment preset={environmentPreset} background blur={0} />
             <Lights />
             <DoorModel />
@@ -164,8 +135,6 @@ export default function Home() {
             <OrbitControls enablePan enableZoom enableRotate />
           </Canvas>
         </div>
-
-        <Image src={"/lami4.jpg"} height={500} width={500} alt="image" className="absolute z-50 left-0 top-0" />
       </main>
     </div>
   );
