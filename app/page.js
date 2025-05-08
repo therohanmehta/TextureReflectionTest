@@ -33,42 +33,41 @@ function DoorModel() {
   useEffect(() => {
     gltf.scene.traverse((child) => {
       if (child.isMesh && child.name === "Door") {
-        child.material.map = texture;
-        child.material.roughnessMap = texture;
+        // Create new MeshStandardMaterial
+        const standardMaterial = new THREE.MeshStandardMaterial();
+
+        // Apply texture
+        standardMaterial.map = texture;
+        standardMaterial.roughnessMap = texture;
 
         // Presets for each wrap finish
         const materialPresets = {
           glossy: {
             metalness: 0.6,
             roughness: 0.3,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.05,
             envMapIntensity: 2.5,
           },
           matte: {
-            metalness: 0,
-            roughness: 2.0,
-            clearcoat: 0.0,
-            clearcoatRoughness: 0.0,
+            metalness: 0.1,
+            roughness: 0.9,
             envMapIntensity: 0.3,
           },
           satin: {
             metalness: 0.1,
-            roughness: 2,
-            clearcoat: 0.2,
-            clearcoatRoughness: 0.4,
+            roughness: 0.7,
             envMapIntensity: 1.2,
           },
         };
 
         // Apply the selected preset
         const props = materialPresets[variant];
-        child.material.metalness = props.metalness;
-        child.material.roughness = props.roughness;
-        child.material.clearcoat = props.clearcoat;
-        child.material.clearcoatRoughness = props.clearcoatRoughness;
-        child.material.envMapIntensity = props.envMapIntensity;
-        child.material.needsUpdate = true;
+        standardMaterial.metalness = props.metalness;
+        standardMaterial.color = new THREE.Color("#fff");
+        standardMaterial.roughness = props.roughness;
+        standardMaterial.envMapIntensity = props.envMapIntensity;
+
+        // Assign new material to mesh
+        child.material = standardMaterial;
       }
     });
   }, [texture, variant]);
@@ -107,7 +106,7 @@ const Lights = () => {
 export default function Home() {
   const { environmentPreset } = useControls({
     environmentPreset: {
-      value: "city",
+      value: "apartment",
       options: ["sunset", "dawn", "night", "warehouse", "forest", "apartment", "studio", "city", "park", "lobby"],
     },
   });
